@@ -8,7 +8,8 @@ const char *menu_items[] = {
     "NETWORK   ",
     "OPERAACAO       ",
     "CALIBRA BRANCO  ",
-    "CALIBRA PRETO   " 
+    "CALIBRA PRETO   ",
+    "TESTE MOTOR     "
 };
 
 // Definição do array de strings para opções de ganho

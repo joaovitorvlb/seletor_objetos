@@ -20,6 +20,7 @@ QueueHandle_t xFilaHttpClient;
 QueueHandle_t xFilaHttpClientResposta;
 
 TaskHandle_t xTaskSensorHandle;
+TaskHandle_t xTaskMotorHandle;
 TaskHandle_t xTaskHttpClientHandle;
 
 void setup() 
@@ -45,9 +46,9 @@ void setup()
 
 	i2c_init();
 
-	xTaskCreate(TaskMenu, "TaskMenu", 4096, NULL, 1, NULL);
-	xTaskCreate(TaskSensor, "Sensor", 2048, NULL, 1, &xTaskSensorHandle);
-	xTaskCreate(TaskMotor, "Motor", 2048, NULL, 1, NULL);
+	//xTaskCreate(TaskMenu, "TaskMenu", 4096, NULL, 1, NULL);
+	//xTaskCreate(TaskSensor, "Sensor", 2048, NULL, 1, &xTaskSensorHandle);
+	xTaskCreate(TaskMotor, "Motor", 2048, NULL, 1, &xTaskMotorHandle);
 	xTaskCreate(TaskWifi, "WiFi", 4096, NULL, 1, NULL);
 	xTaskCreate(TaskHttpClient, "TaskSendToAPI", 4096, NULL, 1, &xTaskHttpClientHandle);
 }

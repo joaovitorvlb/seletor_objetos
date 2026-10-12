@@ -22,6 +22,7 @@ void TaskWifi(void *pvParameters)
     char url[40];
     char rota1[20];
     char rota2[20];
+    char rota3[20];
     
     String ssid_ap = "ESP32-AP";
     String pass_ap = "12345678";
@@ -37,7 +38,7 @@ void TaskWifi(void *pvParameters)
     // === FLAG DE MODO ===
     volatile int modoWifi = 0;  // 0 = STA, 1 = AP
 
-    ler_servidor_config(url, rota1, rota2);
+    ler_servidor_config(url, rota1, rota2, rota3);
     
     // === VARIÁVEIS RECEBIDAS DO FORM ===
     String nome = "";
@@ -47,6 +48,7 @@ void TaskWifi(void *pvParameters)
     // Função para lidar com requisições HTTP
     server.on("/", [&server]() 
     {
+        // index_html termina com '\0' (gerado pelo conversor) para strlen() em send()
         server.send(200, "text/html; charset=utf-8", index_html);
     });
 
@@ -77,16 +79,17 @@ void TaskWifi(void *pvParameters)
         }
     });
 
-    server.on("/config_servidor", [&server, &url, &rota1, &rota2]() 
+    server.on("/config_servidor", [&server, &url, &rota1, &rota2, &rota3]() 
     {
         // Decodifica os parâmetros recebidos
         String new_url = urlDecode(server.arg("url1"));
         String new_rota1 = urlDecode(server.arg("rota1"));
         String new_rota2 = urlDecode(server.arg("rota2"));
+        String new_rota3 = urlDecode(server.arg("rota3"));
 
         Serial.println("URL: " + new_url);
 
-        if (!new_url.isEmpty() && !new_rota1.isEmpty() && !new_rota2.isEmpty()) 
+        if (!new_url.isEmpty() && !new_rota1.isEmpty() && !new_rota2.isEmpty() && !new_rota3.isEmpty()) 
         {
             strncpy(url, new_url.c_str(), sizeof(url) - 1);
             url[sizeof(url) - 1] = '\0'; // Ensure null-termination
@@ -97,10 +100,13 @@ void TaskWifi(void *pvParameters)
             strncpy(rota2, new_rota2.c_str(), sizeof(rota2) - 1);
             rota2[sizeof(rota2) - 1] = '\0'; // Ensure null-termination
 
+            strncpy(rota3, new_rota3.c_str(), sizeof(rota3) - 1);
+            rota3[sizeof(rota3) - 1] = '\0'; // Ensure null-termination
+
             Serial.println("URL: " + String(url));
 
 
-            salvar_servidor_config(url, rota1, rota2);
+            salvar_servidor_config(url, rota1, rota2, rota3);
 
             xTaskNotify(xTaskHttpClientHandle, CMD_API_RELOAD, eSetValueWithOverwrite);
 
@@ -112,9 +118,9 @@ void TaskWifi(void *pvParameters)
         }
     });
 
-    server.on("/get_config", [&server, &ssid, &password, &url, &rota1, &rota2]() 
+    server.on("/get_config", [&server, &ssid, &password, &url, &rota1, &rota2, &rota3]() 
     {
-        ler_servidor_config(url, rota1, rota2);
+        ler_servidor_config(url, rota1, rota2, rota3);
 
         Serial.println("URL: " + String(url));
 
@@ -124,10 +130,27 @@ void TaskWifi(void *pvParameters)
         jsonResponse += "\"password\":\"" + String(password) + "\",";
         jsonResponse += "\"url1\":\"" + String(url) + "\",";
         jsonResponse += "\"rota1\":\"" + String(rota1) + "\",";
-        jsonResponse += "\"rota2\":\"" + String(rota2) + "\"";
+        jsonResponse += "\"rota2\":\"" + String(rota2) + "\",";
+        jsonResponse += "\"rota3\":\"" + String(rota3) + "\"";
         jsonResponse += "}";
 
         // Envia a resposta JSON
+        server.send(200, "application/json", jsonResponse);
+    });
+
+    server.on("/get_analogicos", [&server]() 
+    {
+        // TODO: substituir por leituras dos recursos reais
+        int a1 = 100;
+        int a2 = 200;
+        int a3 = 390;
+
+        String jsonResponse = "{";
+        jsonResponse += "\"a1\":" + String(a1) + ",";
+        jsonResponse += "\"a2\":" + String(a2) + ",";
+        jsonResponse += "\"a3\":" + String(a3);
+        jsonResponse += "}";
+
         server.send(200, "application/json", jsonResponse);
     });
 
@@ -204,7 +227,11 @@ void TaskWifi(void *pvParameters)
                     estado_wifi = WIFI_ESTADO_SETUP;
                     server.stop(); // Para o servidor web ao perder conexão
                 }
-                server.handleClient(); // Lida com requisições HTTP no modo STA
+                else if(WiFi.status() == WL_CONNECTED)
+                {
+                    server.handleClient(); // Lida com requisições HTTP no modo STA
+                }
+            
                 break;
             }
 

@@ -20,17 +20,18 @@ void TaskHttpClient(void *pvParameters)
         CMD_API_RELOAD
     };
 
-    StaticJsonDocument<200> jsonDoc;
+    JsonDocument jsonDoc;
     Pacote_data_t pacote;
     Pacote_resp_t pacote_resposta;
 
     char apiUrl[60];
     char host[40];
     char rota1[20];
-    char rota2[20]; 
+    char rota2[20];
+    char rota3[20];
 
     // Ler as configurações do servidor
-    ler_servidor_config(host, rota1, rota2);
+    ler_servidor_config(host, rota1, rota2, rota3);
 
     uint8_t operacao = OPERACAO_SELECIONANDO;
 
@@ -90,6 +91,17 @@ void TaskHttpClient(void *pvParameters)
                 } 
                 else 
                 {
+                    // Preencher JSON de erro
+                    JsonDocument errorDoc;
+                    errorDoc["padrao"] = "Erro ao enviar dados para a API";
+                    errorDoc["distancia"] = -1.0f;
+
+                    String errorJson;
+                    serializeJson(errorDoc, errorJson);
+
+                    strncpy(pacote_resposta.mensagem, errorJson.c_str(), sizeof(pacote_resposta.mensagem) - 1);
+                    pacote_resposta.mensagem[sizeof(pacote_resposta.mensagem) - 1] = '\0';
+                    xQueueSend(xFilaHttpClientResposta, &pacote_resposta, portMAX_DELAY);
                     Serial.printf("Erro ao enviar dados: %s\n", http.errorToString(httpResponseCode).c_str());
                 }
                 http.end();
@@ -107,7 +119,7 @@ void TaskHttpClient(void *pvParameters)
                 case CMD_API_RELOAD:
                 {
                     // Ler as configurações do servidor
-                    ler_servidor_config(host, rota1, rota2);
+                    ler_servidor_config(host, rota1, rota2, rota3);
                     break;
                 }
             }

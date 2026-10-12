@@ -146,7 +146,7 @@ void ler_wifi_credenciais(String &ssid, String &password)
     }
 }
 
-void salvar_servidor_config(String url, String rota1, String rota2)
+void salvar_servidor_config(String url, String rota1, String rota2, String rota3)
 {
     if (xSemaphoreTake(xNvsMutex, portMAX_DELAY)) // Bloqueia até o mutex estar disponível
     {
@@ -154,12 +154,13 @@ void salvar_servidor_config(String url, String rota1, String rota2)
         preferences.putString("servidor_url", url);
         preferences.putString("servidor_rota1", rota1);
         preferences.putString("servidor_rota2", rota2);
+        preferences.putString("servidor_rota3", rota3);
         preferences.end();
         xSemaphoreGive(xNvsMutex); // Libera o mutex
     }
 }
 
-void ler_servidor_config(char *url, char *rota1, char *rota2)
+void ler_servidor_config(char *url, char *rota1, char *rota2, char *rota3)
 {
     if (xSemaphoreTake(xNvsMutex, portMAX_DELAY)) // Bloqueia até o mutex estar disponível
     {
@@ -195,6 +196,15 @@ void ler_servidor_config(char *url, char *rota1, char *rota2)
             tempRota2 = "/rota2";
         }
         strcpy(rota2, tempRota2.c_str());
+
+        String tempRota3 = preferences.getString("servidor_rota3", "");
+        if (tempRota3.isEmpty()) 
+        {
+            Serial.println("Chave 'servidor_rota3' não encontrada. Criando com valor padrão.");
+            preferences.putString("servidor_rota3", "/rota3");
+            tempRota3 = "/rota3";
+        }
+        strcpy(rota3, tempRota3.c_str());
 
         preferences.end();
         xSemaphoreGive(xNvsMutex); // Libera o mutex

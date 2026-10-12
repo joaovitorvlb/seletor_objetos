@@ -53,6 +53,7 @@ TCS34725RawData tcs34725_raw_data(void)
 
     return data;
 }
+
 RGB tcs34725_normalizar(TCS34725RawData data, TCS34725RawData preto, TCS34725RawData branco)
 {
     RGB cor;
@@ -74,4 +75,4 @@ uint8_t normalizar(uint16_t leitura, uint16_t preto, uint16_t branco)
     int32_t valor = ((int32_t)(leitura - preto) * 255) / (branco - preto);
     valor = constrain(valor, 0, 255);
     return (uint8_t)valor;
-  }
+}

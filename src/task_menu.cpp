@@ -20,6 +20,7 @@ extern QueueHandle_t xFilaSensor;
 extern QueueHandle_t xFilaHttpClientResposta;
 
 extern TaskHandle_t xTaskSensorHandle;
+extern TaskHandle_t xTaskMotorHandle;
 
 // Instância do display LCD (endereço padrão 0x27, 16 colunas, 2 linhas)
 LiquidCrystal_I2C lcd(0x22, 20, 4);
@@ -47,6 +48,14 @@ void TaskMenu(void *pvParameters)
 		CMD_LER_COR,
 		CMD_RELOAD_SENSOR
 	};
+
+	typedef enum {
+		CMD_NOOP = 1,
+		CMD_STEP1 = 2,
+		CMD_STEP2 = 3,
+		CMD_STEP3 = 4,
+		CMD_FIND_ZERO = 5
+	} MotorCommand;
 
 	uint8_t gpio;
 
@@ -119,21 +128,39 @@ void TaskMenu(void *pvParameters)
 					{
 						Serial.println(pacote_resposta.mensagem);
 						// Extrai o conteúdo JSON de uma string e um float
-						StaticJsonDocument<1024> doc;
+						JsonDocument doc;
 						DeserializationError error = deserializeJson(doc, pacote_resposta.mensagem);
 
 						if (!error) 
 						{
 							const char* stringValue = doc["padrao"];
 							float floatValue = doc["distancia"];
+							int estagio_id = doc["estagio_id"];
 
 							lcd.setCursor(0, 2);
-							snprintf(formatted_string, sizeof(formatted_string), "%s", stringValue);
+							snprintf(formatted_string, sizeof(formatted_string), "%s       ", stringValue);
 							lcd.print(formatted_string);
 
 							lcd.setCursor(0, 3);
-							snprintf(formatted_string, sizeof(formatted_string), "%.2f", floatValue);
+							snprintf(formatted_string, sizeof(formatted_string), "%.2f estagio %d   ", floatValue, estagio_id);
 							lcd.print(formatted_string);
+
+							MotorCommand cmd_m;
+
+							if(estagio_id == 1)
+							{
+								cmd_m = CMD_STEP1;
+							} 
+							else if(estagio_id == 2)
+							{
+								cmd_m = CMD_STEP2;
+							} 
+							else if(estagio_id == 3)
+							{
+								cmd_m = CMD_STEP3;
+							} 
+
+							xTaskNotify(xTaskMotorHandle, cmd_m, eSetValueWithOverwrite);
 						} 
 						else 
 						{
@@ -354,9 +381,54 @@ void TaskMenu(void *pvParameters)
 					lcd.setCursor(0, 0);
 					lcd.print(menu_items[6]);
 
+					if(botao_avancar.caiu())
+					{
+						estado_menu = MENU_STATE_TEST_MOTOR;
+						lcd.setCursor(0, 1);
+						lcd.print("                "); // Apaga o conteúdo da segunda linha
+					}
+
 					if(botao_voltar.caiu())
 					{
 						estado_menu = MENU_STATE_CAL_BRANCO;
+						lcd.setCursor(0, 1);
+						lcd.print("                "); // Apaga o conteúdo da segunda linha
+					}
+					break;
+				}
+
+				case MENU_STATE_TEST_MOTOR:
+				{
+					if(botao_f1.caiu())
+					{
+						// Envia uma notificação para a TaskSensor
+						xTaskNotify(xTaskMotorHandle, CMD_STEP1, eSetValueWithOverwrite);
+					}
+
+					if(botao_f2.caiu())
+					{
+						// Envia uma notificação para a TaskSensor
+						xTaskNotify(xTaskMotorHandle, CMD_STEP2, eSetValueWithOverwrite);
+					}
+
+					if(botao_f3.caiu())
+					{
+						// Envia uma notificação para a TaskSensor
+						xTaskNotify(xTaskMotorHandle, CMD_STEP3, eSetValueWithOverwrite);
+					}
+
+					if(botao_selecionar.caiu())
+					{
+						// Envia uma notificação para a TaskSensor
+						xTaskNotify(xTaskMotorHandle, CMD_FIND_ZERO, eSetValueWithOverwrite);
+					}
+
+					lcd.setCursor(0, 0);
+					lcd.print(menu_items[7]);
+
+					if(botao_voltar.caiu())
+					{
+						estado_menu = MENU_STATE_CAL_PRETO;
 						lcd.setCursor(0, 1);
 						lcd.print("                "); // Apaga o conteúdo da segunda linha
 					}

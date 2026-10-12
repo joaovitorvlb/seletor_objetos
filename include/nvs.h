@@ -13,7 +13,7 @@ TCS34725_cfg_t ler_calibracao_sensor(String chave);
 
 void salvar_wifi_credenciais(String ssid, String password); 
 void ler_wifi_credenciais(String &ssid, String &password); 
-void salvar_servidor_config(String url, String rota1, String rota2);
-void ler_servidor_config(char *url, char *rota1, char *rota2);
+void salvar_servidor_config(String url, String rota1, String rota2, String rota3);
+void ler_servidor_config(char *url, char *rota1, char *rota2, char *rota3);
 
 #endif

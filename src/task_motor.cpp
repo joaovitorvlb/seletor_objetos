@@ -12,33 +12,34 @@
 AccelStepper stepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
 // Definição do pino para o ponto zero
-#define ZERO_GPIO_PIN 34 // Substitua 34 pelo número do pino correto
+#define ZERO_GPIO_PIN 27 // Substitua 34 pelo número do pino correto
 
 // Definição dos estados da máquina de estados
 typedef enum {
     MOTOR_IDLE,         // Motor parado
-    MOTOR_MOVING_FWD,   // Motor movendo para frente
-    MOTOR_MOVING_BWD,   // Motor movendo para trás
+    MOTOR_MOVING_TO,   // Motor movendo para frente
     MOTOR_FIND_ZERO     // Motor procurando o ponto zero
 } MotorState;
 
 // Definição dos comandos
 typedef enum {
-    CMD_START = 1,
-    CMD_STOP = 2,
-    CMD_FIND_ZERO = 3
+    CMD_NOOP = 1,
+    CMD_STEP1 = 2,
+    CMD_STEP2 = 3,
+    CMD_STEP3 = 4,
+    CMD_FIND_ZERO = 5
 } MotorCommand;
 
 void TaskMotor(void *pvParameters)
 {
-    stepper.setMaxSpeed(200);       // Velocidade máxima em passos por segundo
-    stepper.setAcceleration(1000);  // Aceleração em passos por segundo^2
-    stepper.setSpeed(100);          // Velocidade inicial
+    stepper.setMaxSpeed(1200);       // Velocidade máxima em passos por segundo
+    stepper.setAcceleration(6000);  // Aceleração em passos por segundo^2
+    stepper.setSpeed(600);          // Velocidade inicial
 
     MotorState currentState = MOTOR_IDLE; // Estado inicial do motor
     int targetPosition = 0;               // Posição alvo do motor
 
-    MotorCommand motorCommand = CMD_STOP; // Instance of the MotorCommand enum
+    MotorCommand motorCommand = CMD_NOOP; // Instance of the MotorCommand enum
 
     while(1)
     {
@@ -47,56 +48,41 @@ void TaskMotor(void *pvParameters)
             case MOTOR_IDLE:
             {
                 // Motor está parado, aguarda comando
-                // Aqui você pode adicionar lógica para mudar de estado, como um sinal externo
-                targetPosition = 230; // Exemplo: define uma posição alvo
-                currentState = MOTOR_MOVING_FWD; // Muda para o estado de movimento para frente
-                stepper.setCurrentPosition(0);
                 break;
             }
 
-            case MOTOR_MOVING_FWD:
+            case MOTOR_MOVING_TO:
             {
                 // Move o motor para frente até a posição alvo
                 stepper.moveTo(targetPosition);
-
-                if (stepper.distanceToGo() == 0)
-                {
-                    currentState = MOTOR_MOVING_BWD; // Muda para o estado de movimento para trás
-                    targetPosition = 0;             // Define nova posição alvo
-                }
-                break;
-            }
-
-            case MOTOR_MOVING_BWD:
-            {
-                // Move o motor para trás até a posição inicial
-                stepper.moveTo(targetPosition);
-
-                if (stepper.distanceToGo() == 0)
-    
+                // se a posição atual for igual à posição alvo, muda para o estado ocioso
+                if (stepper.distanceToGo() == 0)  //  stepper.distanceToGo retorna a distancia da posição atual para a posição do alvo
                 {
                     currentState = MOTOR_IDLE; // Retorna ao estado ocioso
                 }
+ 
                 break;
             }
 
             case MOTOR_FIND_ZERO:
             {
                 // Procura o ponto zero do ângulo pelo pulso de uma GPIO
-                if (digitalRead(ZERO_GPIO_PIN) == HIGH) // Verifica se o pulso foi detectado
+                if (digitalRead(ZERO_GPIO_PIN) == LOW) // Verifica se o pulso foi detectado
                 {
                     stepper.setCurrentPosition(0); // Define a posição atual como zero
                     currentState = MOTOR_IDLE;    // Retorna ao estado ocioso
                 }
-
-                stepper.moveTo(targetPosition);
+                else
+                {
+                    stepper.moveTo(5000);
+                }
                 break;
             }
 
             default:
             {
-                stepper.setCurrentPosition(0); // Define a posição atual como zero
-                currentState = MOTOR_IDLE;    // Retorna ao estado ocioso
+                //stepper.setCurrentPosition(0); // Define a posição atual como zero
+                //currentState = MOTOR_IDLE;    // Retorna ao estado ocioso
                 break;
             }
         }
@@ -107,29 +93,38 @@ void TaskMotor(void *pvParameters)
         if (xTaskNotifyWait(0, 0, &notificationValue, 0))
         {
             motorCommand = static_cast<MotorCommand>(notificationValue);
-            switch (motorCommand) 
+            switch (notificationValue) 
             {
-                case CMD_START:
+                case CMD_STEP1:
                 {
-                    currentState = MOTOR_MOVING_FWD; // Inicia o movimento para frente
+                    targetPosition = -850;
+                    currentState = MOTOR_MOVING_TO; // Inicia o movimento para frente
                     break;
                 }
 
-                case CMD_STOP:
+                case CMD_STEP2:
                 {
-                    currentState = MOTOR_IDLE; // Para o motor
+                    targetPosition = -1250;
+                    currentState = MOTOR_MOVING_TO; // Para o motor
+                    break;
+                }
+
+                case CMD_STEP3:
+                {
+                    targetPosition = -1650;
+                    currentState = MOTOR_MOVING_TO; // Para o motor
                     break;
                 }
 
                 case CMD_FIND_ZERO:
                 {
-                    currentState = MOTOR_IDLE; // Para o motor
+                    currentState = MOTOR_FIND_ZERO; // Para o motor
                     break;
                 }
 
                 default:
                 {
-                    currentState = MOTOR_IDLE; // Para o motor
+                    //currentState = MOTOR_IDLE; // Para o motor
                     break;
                 }
             }

@@ -16,6 +16,7 @@ typedef struct
 {
     char mensagem[150];
     double distancia;
+    int estagio; // Estado da maturação da fruta
 } Pacote_resp_t;
 
 typedef struct {

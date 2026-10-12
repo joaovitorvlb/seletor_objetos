@@ -8,6 +8,7 @@
 #define MENU_STATE_OPERACAO 4
 #define MENU_STATE_CAL_BRANCO 5
 #define MENU_STATE_CAL_PRETO 6
+#define MENU_STATE_TEST_MOTOR 7
 
 
 void TaskMenu(void *pvParameters);

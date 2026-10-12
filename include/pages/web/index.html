@@ -1,98 +1,508 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>ESP32 Web</title>
-        <style>
-            #container {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start; /* Alinha os itens à esquerda */
-                justify-content: center;
-                margin: 0 auto;
-                text-align: left; /* Alinha o texto à esquerda */
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seletor de Objetos — ESP32</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --surface-hover: #243044;
+            --border: #2d3a4f;
+            --text: #e8edf4;
+            --text-muted: #8b9cb3;
+            --accent: #00c9a7;
+            --accent-hover: #00e0bb;
+            --accent-dim: rgba(0, 201, 167, 0.12);
+            --danger: #ff6b6b;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 201, 167, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0, 120, 200, 0.08), transparent);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding: 24px 16px 48px;
+        }
+
+        .page {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-dim);
+            border: 1px solid rgba(0, 201, 167, 0.25);
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .card-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        .field:last-of-type {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        input::placeholder {
+            color: #5a6a7f;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: var(--bg);
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--surface-hover);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 100;
+            max-width: calc(100% - 32px);
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: rgba(0, 201, 167, 0.4);
+        }
+
+        .toast.error {
+            border-color: rgba(255, 107, 107, 0.4);
+            color: var(--danger);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 8px;
+        }
+
+        .analog-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .analog-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .analog-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .analog-value {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        .analog-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-right: 6px;
+            vertical-align: middle;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .live-dot.off {
+            background: var(--text-muted);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+
+        @media (max-width: 400px) {
+            .row {
+                grid-template-columns: 1fr;
             }
 
-            #container input[name="url1"]{
-                margin-left: 27px; /* Espaçamento acima */
+            .analog-grid {
+                grid-template-columns: 1fr;
             }
 
-            #container input[name="rota1"], input[name="rota2"]{
-                margin-left: 5px; /* Espaçamento acima */
+            h1 {
+                font-size: 1.35rem;
             }
+        }
+    </style>
+    <script>
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + (type || '');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(function () {
+                toast.className = 'toast';
+            }, 3000);
+        }
 
-            #container input[name="ssid"]{
-                margin-left: 55px; /* Espaçamento acima */
-            }
-
-            #container input[name="password"]{
-                margin-left: 4px; /* Espaçamento acima */
-            }
-        </style>
-        <script>
-            // Função para buscar os dados do servidor e preencher os campos
-            async function fetchData() {
-                try {
-                    const response = await fetch('/get_config');
-                    if (response.ok) {
-                        const data = await response.json();
-                        document.querySelector('input[name="ssid"]').value = data.ssid || '';
-                        document.querySelector('input[name="password"]').value = data.password || '';
-                        document.querySelector('input[name="url1"]').value = data.url1 || '';
-                        document.querySelector('input[name="rota1"]').value = data.rota1 || '';
-                        document.querySelector('input[name="rota2"]').value = data.rota2 || '';
-                    } else {
-                        console.error('Failed to fetch data:', response.status);
-                    }
-                } catch (error) {
-                    console.error('Error fetching data:', error);
+        async function fetchData() {
+            try {
+                const response = await fetch('/get_config');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.querySelector('input[name="ssid"]').value = data.ssid || '';
+                    document.querySelector('input[name="password"]').value = data.password || '';
+                    document.querySelector('input[name="url1"]').value = data.url1 || '';
+                    document.querySelector('input[name="rota1"]').value = data.rota1 || '';
+                    document.querySelector('input[name="rota2"]').value = data.rota2 || '';
+                    document.querySelector('input[name="rota3"]').value = data.rota3 || '';
+                } else {
+                    showToast('Erro ao carregar configurações', 'error');
                 }
+            } catch (error) {
+                showToast('Falha na conexão com o ESP32', 'error');
             }
+        }
 
-            // Função para enviar os dados do formulário sem recarregar a página
-            async function sendConfig(endpoint) {
-                const params = new URLSearchParams({
-                    ssid: document.querySelector('input[name="ssid"]').value,
-                    password: document.querySelector('input[name="password"]').value,
-                    url1: document.querySelector('input[name="url1"]').value,
-                    rota1: document.querySelector('input[name="rota1"]').value,
-                    rota2: document.querySelector('input[name="rota2"]').value
+        async function sendConfig(endpoint) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+
+            const params = new URLSearchParams({
+                ssid: document.querySelector('input[name="ssid"]').value,
+                password: document.querySelector('input[name="password"]').value,
+                url1: document.querySelector('input[name="url1"]').value,
+                rota1: document.querySelector('input[name="rota1"]').value,
+                rota2: document.querySelector('input[name="rota2"]').value,
+                rota3: document.querySelector('input[name="rota3"]').value
+            });
+
+            try {
+                const response = await fetch('/' + endpoint + '?' + params.toString(), {
+                    method: 'GET'
                 });
 
-                try {
-                    const response = await fetch(`/${endpoint}?${params.toString()}`, {
-                        method: 'GET'
-                    });
+                if (response.ok) {
+                    showToast('Configurações salvas com sucesso!', 'success');
+                } else {
+                    showToast('Erro ao salvar configurações', 'error');
+                }
+            } catch (error) {
+                showToast('Falha ao enviar dados', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
 
-                    if (response.ok) {
-                        alert('Configurações salvas com sucesso!');
-                    } else {
-                        alert('Erro ao salvar configurações!');
+        async function fetchAnalogicos() {
+            const dot = document.getElementById('live-dot');
+            try {
+                const response = await fetch('/get_analogicos');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('analog1').textContent = data.a1;
+                    document.getElementById('analog2').textContent = data.a2;
+                    document.getElementById('analog3').textContent = data.a3;
+                    if (dot) {
+                        dot.classList.remove('off');
                     }
-                } catch (error) {
-                    console.error('Error sending data:', error);
+                } else if (dot) {
+                    dot.classList.add('off');
+                }
+            } catch (error) {
+                if (dot) {
+                    dot.classList.add('off');
                 }
             }
+        }
 
-            window.onload = fetchData;
-        </script>
-    </head>
-    <body>
-        <div id="container">
-            <h1>ESP32 Web</h1>
-            <h1>Configuração</h1>
-            <div>
-                SSID: <input type="text" name="ssid" size="30"><br>
-                PASSWORD: <input type="text" name="password" size="30"><br>
-                <button type="button" onclick="sendConfig('config_wifi')">Enviar</button>
+        window.onload = function () {
+            fetchData();
+            fetchAnalogicos();
+            setInterval(fetchAnalogicos, 1000);
+        };
+    </script>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div class="badge">ESP32</div>
+            <h1>Seletor de Objetos</h1>
+            <p class="subtitle">Painel de configuração do dispositivo</p>
+        </header>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-icon">📶</div>
+                <div>
+                    <div class="card-title">Rede Wi-Fi</div>
+                    <div class="card-desc">Credenciais de conexão em modo STA</div>
+                </div>
             </div>
 
-            <h1>Configuração Do Servidor</h1>
-            <div>
-                URL: <input type="text" name="url1" size="40"><br>
-                ROTA 1: <input type="text" name="rota1" size="15"><br>
-                ROTA 2: <input type="text" name="rota2" size="15"><br>
-                <button type="button" onclick="sendConfig('config_servidor')">Enviar</button>
+            <div class="field">
+                <label for="ssid">SSID</label>
+                <input type="text" id="ssid" name="ssid" placeholder="Nome da rede" autocomplete="off">
             </div>
-        </div>
-    </body>
+
+            <div class="field">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" placeholder="Senha da rede" autocomplete="off">
+            </div>
+
+            <button type="button" class="btn" onclick="sendConfig('config_wifi')">Salvar Wi-Fi</button>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-icon">🌐</div>
+                <div>
+                    <div class="card-title">Servidor API</div>
+                    <div class="card-desc">URL e rotas para classificação e separação</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="url1">URL base</label>
+                <input type="text" id="url1" name="url1" placeholder="exemplo.com ou http://192.168.0.10">
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label for="rota1">Rota 1 — Separando</label>
+                    <input type="text" id="rota1" name="rota1" placeholder="/rota1">
+                </div>
+                <div class="field">
+                    <label for="rota2">Rota 2 — Classificando</label>
+                    <input type="text" id="rota2" name="rota2" placeholder="/rota2">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="rota3">Rota 3 — Inserindo</label>
+                <input type="text" id="rota3" name="rota3" placeholder="/rota3">
+            </div>
+
+            <button type="button" class="btn btn-secondary" onclick="sendConfig('config_servidor')">Salvar Servidor</button>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-icon">📡</div>
+                <div>
+                    <div class="card-title">Leituras analógicas</div>
+                    <div class="card-desc"><span id="live-dot" class="live-dot off"></span>Atualização a cada 1 s</div>
+                </div>
+            </div>
+
+            <div class="analog-grid">
+                <div class="analog-item">
+                    <div class="analog-label">Analógico 1</div>
+                    <div class="analog-value" id="analog1">—</div>
+                    <div class="analog-unit">ADC</div>
+                </div>
+                <div class="analog-item">
+                    <div class="analog-label">Analógico 2</div>
+                    <div class="analog-value" id="analog2">—</div>
+                    <div class="analog-unit">ADC</div>
+                </div>
+                <div class="analog-item">
+                    <div class="analog-label">Analógico 3</div>
+                    <div class="analog-value" id="analog3">—</div>
+                    <div class="analog-unit">ADC</div>
+                </div>
+            </div>
+        </section>
+
+        <footer>Seletor de Objetos · v1.0</footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+</body>
 </html>
